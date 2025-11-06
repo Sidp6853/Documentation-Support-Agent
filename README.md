@@ -43,58 +43,7 @@ Everything lives inside **one single file**:
 
 ---
 
-## 📁 Project Structure
-
-Documentation-Support-Agent/
-│
-├── doc_support_agent.py # ✅ Entire application (UI + backend)
-│
-├── requirements.txt
-├── README.md
-├── .gitignore
-│
-└── Sample_documents/ # (Optional) for PDFs or screenshots
 
 
----
-
-## ✅ Installation
-
-### **2. Create a virtual environment**
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate         # Windows
-
-# OR
-
-source .venv/bin/activate      # Mac/Linux
-
-### 3. Install dependencies
-pip install -r requirements.txt
-
-## ▶️ Run the App
-
-Inside the project folder:
-
-```bash
-streamlit run doc_support_agent.py
-
-User → Streamlit UI
-     → DocumentProcessor (PDF/URL/Text parsing)
-     → SemanticChunker → meaning-based chunking
-     → SentenceTransformer embeddings
-     → FAISS vector search
-     → Gemini 2.5 Flash → grounded answer
-     → UI displays answer + source evidence
-
-## 🧪 Example Workflow
-
-1. Enter your **Gemini API Key**
-2. Upload a **PDF**, paste text, or enter a **URL**
-3. Ask a question
-4. View:
-   - ✅ Generated Answer
-   - ✅ Top relevant source passages
 
 
