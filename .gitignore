@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Test files
+test_*.py
+*_test.py
+
+# Temporary files
+*.tmp
+*.log
+temp/
+tmp/
+
+# Model cache
+.cache/
+models/
+
+# API Keys (IMPORTANT!)
+*api_key*
+*API_KEY*
+secrets.py
+
+# Data files (if large)
+*.pdf
+*.txt
+data/
+documents/
+
+# OS
+Thumbs.db
+
+support_agent_lite.py
+support_agent.py
+app.py
