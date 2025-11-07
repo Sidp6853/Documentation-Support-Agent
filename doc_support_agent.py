@@ -14,8 +14,6 @@ import streamlit as st
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain.embeddings import HuggingFaceEmbeddings
 
-
-
 warnings.filterwarnings("ignore")
 
 
@@ -28,18 +26,11 @@ class Chunk(BaseModel):
     start_char: int
     end_char: int
 
-
-
 class DocumentProcessor:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-        """
-        Initializes the DocumentProcessor with semantic chunking.
-        """
-        # Create LangChain embeddings wrapper for the same model
+       
         self.model_name = model_name
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
-
-        # Initialize Semantic Chunker from LangChain
         self.chunker = SemanticChunker(self.embeddings)
 
     def process_pdf(self, file_path: str) -> str:
@@ -69,7 +60,7 @@ class DocumentProcessor:
 
     def chunk_text(self, text: str, source: str) -> List[Chunk]:
         """
-        Uses LangChain SemanticChunker to split text meaningfully.
+        Uses LangChain SemanticChunker to split input text.
         """
         semantic_chunks = self.chunker.split_text(text)
 
@@ -84,12 +75,8 @@ class DocumentProcessor:
             ))
         return chunks
 
-   
-
-
-
-
 class VectorStore:
+
     def __init__(self, embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(embedding_model_name)
         self.dimension = self.model.get_sentence_embedding_dimension()
@@ -146,10 +133,12 @@ CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
 2. DO NOT use any external knowledge, even if you know the answer
 3. DO NOT say "I can provide a general answer" or similar phrases
 4. If sources mention the topic, extract and explain what they say
-5. If sources don't contain enough info, say: "The provided sources do not contain sufficient information to answer this question."
+5. If the sources do NOT contain enough information:
+- You MUST output exactly this sentence: "Insufficient information"
 6. Always cite which source you're using: [Source 1], [Source 2], etc.
 7. NEVER add code examples unless they appear in the sources
 8. NEVER add explanations beyond what the sources state
+9. You must ALWAYS return some text.
 
 SOURCES:
 {context}
@@ -157,16 +146,23 @@ SOURCES:
 QUESTION: {query}
 
 ANSWER:
-• A clear, concise explanation of the answer using ONLY info from the sources.
-
-SOURCES USED:
-• List which source numbers you used (e.g., [Source 1], [Source 3]).
+• A clear explanation of the answer using ONLY info from the sources.
 
 ANSWER:"""
 
         try:
             response = self.model.generate_content(prompt)
-            return response.text.strip()
+            
+            text = getattr(response, "text", "")
+            
+            if text.strip() == "":
+                return "Insufficient information"
+
+    
+            if "insufficient" in text.lower():
+                return "Insufficient information"
+
+            return text.strip()
         except Exception as e:
             return f" Error generating answer: {str(e)}"
 
@@ -177,22 +173,31 @@ class Similar_source:
 
     def format_sources_clean(self, chunks: List[Tuple[Chunk, float]]) -> List[Dict]:
         formatted_sources = []
-        for i, (chunk, score) in enumerate(chunks[:3], 1):
+        for i, (chunk, score) in enumerate(chunks[:5], 1):
             formatted_sources.append({
                 "source_id": i,
                 "similarity": f"{score:.2%}",
                 "source": chunk.source,
-                "excerpt": chunk.text + ("..." if len(chunk.text) > 500 else ""),
+                "excerpt": chunk.text,
             })
         return formatted_sources
 
 
-class ChatBot:
+class support_agent:
     def __init__(self, api_key: str):
         self.doc_processor = DocumentProcessor()
         self.vector_store = VectorStore()
         self.answer_generator = AnswerGenerator(api_key)
         self.similar_source = Similar_source()
+
+    def _actual_source_name(self, source_type, source):
+            if source_type == "pdf" or source_type == "txt":
+                return os.path.basename(source)
+            elif source_type == "url":
+                return f"URL: {source}"
+            elif source_type == "text":
+                return "Text"
+            return "Unknown Source"    
 
     def ingest_source(self, source_type: str, source: str) -> int:
         if source_type == "pdf":
@@ -206,7 +211,10 @@ class ChatBot:
         else:
             raise ValueError("Unsupported source type")
 
-        chunks = self.doc_processor.chunk_text(text, source)
+    
+        actual_source = self._actual_source_name(source_type, source)
+        chunks = self.doc_processor.chunk_text(text, actual_source) 
+
         self.vector_store.add_documents(chunks)
         return len(chunks)
     
@@ -225,8 +233,8 @@ st.set_page_config(page_title="📚 Documentation Support Agent", page_icon="�
 
 st.title("📚 Documentation Support Agent")
 
-if "chatbot" not in st.session_state:
-    st.session_state.chatbot = None
+if "support_agent" not in st.session_state:
+    st.session_state.support_agent = None
 if "ingested" not in st.session_state:
     st.session_state.ingested = False
 if "document_count" not in st.session_state: 
@@ -234,15 +242,15 @@ if "document_count" not in st.session_state:
 
 api_key = st.text_input("🔑 Enter your Gemini API Key:", type="password")
 
-if api_key and st.session_state.chatbot is None:
+if api_key and st.session_state.support_agent is None:
     try:
-        st.session_state.chatbot = ChatBot(api_key)
-        st.success("✅ Chatbot initialized successfully!")
+        st.session_state.support_agent = support_agent(api_key)
+        st.success("✅ support_agent initialized successfully!")
     except Exception as e:
-        st.error(f"Error initializing chatbot: {str(e)}")
+        st.error(f"Error initializing support_agent: {str(e)}")
 
-chatbot = st.session_state.chatbot
-if chatbot is None:
+support_agent = st.session_state.support_agent
+if support_agent is None:
     st.stop()
 
 st.header(" Document Ingestion")
@@ -256,7 +264,7 @@ if source_option == "Upload PDF/TXT":
             temp_path = tmp.name
         file_type = "pdf" if uploaded_file.name.endswith(".pdf") else "txt"
         try:
-            num_chunks = chatbot.ingest_source(file_type, temp_path)
+            num_chunks = support_agent.ingest_source(file_type, temp_path)
             st.success(f"✅ Ingested {num_chunks} chunks from file.")
             st.session_state.ingested = True
         except Exception as e:
@@ -266,7 +274,7 @@ elif source_option == "Enter URL":
     url = st.text_input("Enter a webpage URL:")
     if st.button("Ingest URL"):
         try:
-            num_chunks = chatbot.ingest_source("url", url)
+            num_chunks = support_agent.ingest_source("url", url)
             st.success(f"✅ Ingested {num_chunks} chunks from URL.")
             st.session_state.ingested = True
         except Exception as e:
@@ -277,13 +285,27 @@ elif source_option == "Paste Text":
     if st.button("Ingest Text"):
         if text.strip():
             try:
-                num_chunks = chatbot.ingest_source("text", text)
+                num_chunks = support_agent.ingest_source("text", text)
                 st.success(f"✅ Ingested {num_chunks} chunks from input text.")
                 st.session_state.ingested = True
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         else:
             st.warning("Please paste some text.")
+
+if uploaded_file:
+    with st.spinner("📄 Extracting text from document..."):
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(uploaded_file.read())
+            temp_path = tmp.name
+
+    with st.spinner("🔍 Chunking document using Semantic Chunker..."):
+        file_type = "pdf" if uploaded_file.name.endswith(".pdf") else "txt"
+        num_chunks = support_agent.ingest_source(file_type, temp_path)
+
+    st.success(f"✅ Successfully processed {num_chunks} chunks!")
+    st.session_state.ingested = True
+
 
 st.header("💬 Ask a Question")
 if not st.session_state.ingested:
@@ -295,14 +317,14 @@ query = st.text_input("Enter your question:")
 if query:
     with st.spinner("Generating answer..."):
         try:
-            result = chatbot.query(query)
+            result = support_agent.query(query)
             st.subheader("✅ Answer")
             st.write(result["answer"])
 
             st.subheader("📚 Source Passages Used")
             for src in result.get("sources", []):
                 with st.expander(f"Source {src['source_id']} (Similarity: {src['similarity']})"):
-                    st.markdown(f"**From:** `{src['source']}`")
+                    st.markdown(f"**From:** `{src['source']}`")  
                     st.write(src["excerpt"])
         except Exception as e:
             st.error(f"Error processing query: {str(e)}")
