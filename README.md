@@ -186,39 +186,6 @@ similarity = 1.0  # Correctly identifies as similar!
 5. **Context building**: Combine chunks for LLM
 
 ---
-
-## 📊 Example Interactions
-
-### ✅ Successful Answer (Sources Available)
-
-**Query:** "What is list comprehension in Python?"
-
-**Response:**
-```
-List comprehensions provide a concise way to create lists [Source 1]. 
-A list comprehension consists of brackets containing an expression 
-followed by a for clause, then zero or more for or if clauses [Source 2].
-
-Sources:
-  [Source 1] - 62.76% similarity
-  [Source 2] - 55.29% similarity
-  [Source 3] - 52.82% similarity
-```
-
-### ✅ Correct Refusal (Insufficient Information)
-
-**Query:** "How do I deploy to AWS Lambda?"
-
-**Response:**
-```
-The provided sources do not contain sufficient information to answer 
-this question about AWS Lambda deployment.
-```
-
-This is **correct behavior** - refusing rather than hallucinating!
-
----
-
 ## 🔧 Configuration Options
 
 ### Chunking (in DocumentProcessor)
