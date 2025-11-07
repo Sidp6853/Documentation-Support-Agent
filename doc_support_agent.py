@@ -23,9 +23,6 @@ class Chunk(BaseModel):
     text: str
     source: str
     chunk_id: int
-    start_char: int
-    end_char: int
-
 class DocumentProcessor:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
        
@@ -70,8 +67,7 @@ class DocumentProcessor:
                     text=chunk_text.strip(),
                     source=source,
                     chunk_id=i,
-                    start_char=0,
-                    end_char=len(chunk_text)
+                    
                 ))
         return chunks
 
@@ -107,7 +103,9 @@ class VectorStore:
     def reset(self):
         """Clears all stored documents and rebuild index."""
         self.index = None
-        self.stored_chunks = []   
+        self.chunks = []
+
+        
 
 
 class AnswerGenerator:
@@ -170,9 +168,7 @@ ANSWER:"""
 
 
 class Similar_source:
-    def __init__(self, similarity_threshold: float = 0.30):
-        self.similarity_threshold = similarity_threshold
-
+    
     def format_sources_clean(self, chunks: List[Tuple[Chunk, float]]) -> List[Dict]:
         formatted_sources = []
         for i, (chunk, score) in enumerate(chunks[:5], 1):
@@ -222,7 +218,7 @@ class support_agent:
     
     def clear_documents(self):
         """Clear all ingested documents."""
-        self.vector_store.clear()
+        self.vector_store.reset()
 
     def query(self, question: str, k: int = 5)-> Dict:
         chunks = self.vector_store.search(question, k=k)
@@ -251,8 +247,8 @@ if api_key and st.session_state.support_agent is None:
     except Exception as e:
         st.error(f"Error initializing support_agent: {str(e)}")
 
-support_agent = st.session_state.support_agent
-if support_agent is None:
+agent = st.session_state.support_agent
+if agent is None:
     st.stop()
 
 st.header(" Document Ingestion")
@@ -266,7 +262,7 @@ if source_option == "Upload PDF/TXT":
             temp_path = tmp.name
         file_type = "pdf" if uploaded_file.name.endswith(".pdf") else "txt"
         try:
-            num_chunks = support_agent.ingest_source(file_type, temp_path)
+            num_chunks = agent.ingest_source(file_type, temp_path)
             st.success(f"✅ Ingested {num_chunks} chunks from file.")
             st.session_state.ingested = True
         except Exception as e:
@@ -276,7 +272,7 @@ elif source_option == "Enter URL":
     url = st.text_input("Enter a webpage URL:")
     if st.button("Ingest URL"):
         try:
-            num_chunks = support_agent.ingest_source("url", url)
+            num_chunks = agent.ingest_source("url", url)
             st.success(f"✅ Ingested {num_chunks} chunks from URL.")
             st.session_state.ingested = True
         except Exception as e:
@@ -287,7 +283,7 @@ elif source_option == "Paste Text":
     if st.button("Ingest Text"):
         if text.strip():
             try:
-                num_chunks = support_agent.ingest_source("text", text)
+                num_chunks = agent.ingest_source("text", text)
                 st.success(f"✅ Ingested {num_chunks} chunks from input text.")
                 st.session_state.ingested = True
             except Exception as e:
@@ -295,22 +291,24 @@ elif source_option == "Paste Text":
         else:
             st.warning("Please paste some text.")
 
-
-   
-
-
-
 st.header("💬 Ask a Question")
 if not st.session_state.ingested:
     st.warning("Please ingest at least one document before querying.")
     st.stop()
  
+if st.session_state.ingested:
+    if st.button("🗑️ Clear All Documents"):
+        agent.clear_documents()
+        st.session_state.ingested = False
+        st.session_state.document_count = 0
+        st.success("✅ All documents cleared!")
+        st.rerun()
 
 query = st.text_input("Enter your question:")
 if query:
     with st.spinner("Generating answer..."):
         try:
-            result = support_agent.query(query)
+            result = agent.query(query)
             st.subheader("✅ Answer")
             st.write(result["answer"])
 
