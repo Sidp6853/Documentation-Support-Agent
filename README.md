@@ -23,7 +23,7 @@ Everything lives inside **one single file**:
 
 ### ✅ Smart Semantic Chunking  
 - Uses LangChain's **SemanticChunker** for meaningful chunk boundaries  
-- Better than fixed-size window chunking
+
 
 ### ✅ Fast & Accurate Retrieval  
 - Sentence Transformers embeddings  
@@ -38,8 +38,6 @@ Everything lives inside **one single file**:
 
 ### ✅ Single-File Streamlit App  
 - Simple for deployment  
-- Easy to fork & modify  
-- No backend server required  
 
 ---
 
