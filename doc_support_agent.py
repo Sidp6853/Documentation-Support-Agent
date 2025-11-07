@@ -66,14 +66,16 @@ class DocumentProcessor:
 
         chunks = []
         for i, chunk_text in enumerate(semantic_chunks):
-            chunks.append(Chunk(
-                text=chunk_text.strip(),
-                source=source,
-                chunk_id=i,
-                start_char=0,
-                end_char=len(chunk_text)
-            ))
+                chunks.append(Chunk(
+                    text=chunk_text.strip(),
+                    source=source,
+                    chunk_id=i,
+                    start_char=0,
+                    end_char=len(chunk_text)
+                ))
         return chunks
+
+        
 
 class VectorStore:
 
@@ -103,7 +105,7 @@ class VectorStore:
     
 
     def reset(self):
-        """Clear all stored documents and rebuild index."""
+        """Clears all stored documents and rebuild index."""
         self.index = None
         self.stored_chunks = []   
 
@@ -293,18 +295,9 @@ elif source_option == "Paste Text":
         else:
             st.warning("Please paste some text.")
 
-if uploaded_file:
-    with st.spinner("📄 Extracting text from document..."):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(uploaded_file.read())
-            temp_path = tmp.name
 
-    with st.spinner("🔍 Chunking document using Semantic Chunker..."):
-        file_type = "pdf" if uploaded_file.name.endswith(".pdf") else "txt"
-        num_chunks = support_agent.ingest_source(file_type, temp_path)
+   
 
-    st.success(f"✅ Successfully processed {num_chunks} chunks!")
-    st.session_state.ingested = True
 
 
 st.header("💬 Ask a Question")
