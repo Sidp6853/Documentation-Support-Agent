@@ -21,8 +21,6 @@ This system enables users to upload documents (PDF, TXT, URLs, or raw text) and 
   <img src="assets/ui_screenshot.png" alt="Documentation Support Agent UI" width="800"/>
 </p>
 
-*Figure: Streamlit interface showing document ingestion and query answering workflow.*
-
 ---
 
 ## ✨ Key Features
