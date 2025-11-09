@@ -15,6 +15,16 @@ This system enables users to upload documents (PDF, TXT, URLs, or raw text) and 
 
 ---
 
+## 🖥️ User Interface Preview
+
+<p align="center">
+  <img src="assets/ui_screenshot.png" alt="Documentation Support Agent UI" width="800"/>
+</p>
+
+*Figure: Streamlit interface showing document ingestion and query answering workflow.*
+
+---
+
 ## ✨ Key Features
 
 - ✅ **Multi-source ingestion**: PDF, TXT files, web URLs, and raw text
