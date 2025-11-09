@@ -381,12 +381,6 @@ For setup issues:
 
 ---
 
-## 📄 License
-
-Created for technical assessment purposes.
-
----
-
 ## 👤 Author
 
 Documentation Support Agent - Siddhi Pandya
